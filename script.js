@@ -1,7 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPABASE_URL = "https://SEU_URL_DO_SUPABASE.supabase.co";
-const SUPABASE_KEY = "SUA_ANON_KEY_AQUI";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4Z211ZmFjdmJ6YnhiY3htZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyMDkzMjIsImV4cCI6MjA3Nzc4NTMyMn0.5TtAULeW2b8_eExfWfFfz4YPkzn7J0ki1XlswTj5nNY";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // =============== FUNÇÕES DE PESSOAS ===============
