@@ -1,147 +1,125 @@
-let dados = JSON.parse(localStorage.getItem("faculdadeDados")) || {
-  pessoas: [],
-  equipamentos: [],
-  emprestimos: []
-};
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-function salvar() {
-  localStorage.setItem("faculdadeDados", JSON.stringify(dados));
+const SUPABASE_URL = "https://SEU_URL_DO_SUPABASE.supabase.co";
+const SUPABASE_KEY = "SUA_ANON_KEY_AQUI";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// =============== FUNÇÕES DE PESSOAS ===============
+async function registrarPessoa() {
+  const nome = nomeInput.value;
+  const telefone = telefoneInput.value;
+  const cpf = cpfInput.value;
+  const curso = cursoInput.value;
+
+  if (!nome || !telefone || !cpf || !curso) return alert("Preencha todos os campos!");
+
+  await supabase.from("pessoas").insert([{ nome, telefone, cpf, curso }]);
+  nomeInput.value = telefoneInput.value = cpfInput.value = cursoInput.value = "";
+  carregarDados();
 }
 
-function atualizarTabelas() {
-  // Pessoas
-  const tabelaPessoas = document.getElementById("tabelaPessoas");
-  tabelaPessoas.innerHTML = "<tr><th>Nome</th><th>Telefone</th><th>CPF</th><th>Curso</th></tr>";
-  dados.pessoas.forEach(p => {
-    tabelaPessoas.innerHTML += `<tr><td>${p.nome}</td><td>${p.telefone}</td><td>${p.cpf}</td><td>${p.curso}</td></tr>`;
-  });
-
-  // Equipamentos
-  const tabelaEquip = document.getElementById("tabelaEquipamentos");
-  tabelaEquip.innerHTML = "<tr><th>Nome</th><th>Patrimônio</th><th>Status</th></tr>";
-  dados.equipamentos.forEach(e => {
-    tabelaEquip.innerHTML += `<tr><td>${e.nome}</td><td>${e.patrimonio}</td><td>${e.status}</td></tr>`;
-  });
-
-  // Empréstimos
-  const tabelaEmp = document.getElementById("tabelaEmprestimos");
-  tabelaEmp.innerHTML = "<tr><th>Equipamento</th><th>Aluno</th><th>Curso</th><th>Status</th><th>Data Empréstimo</th><th>Data Devolução</th></tr>";
-  dados.emprestimos.forEach(emp => {
-    tabelaEmp.innerHTML += `<tr>
-      <td>${emp.equipamento}</td>
-      <td>${emp.aluno}</td>
-      <td>${emp.curso}</td>
-      <td>${emp.status}</td>
-      <td>${emp.data_emprestimo}</td>
-      <td>${emp.data_devolucao || "---"}</td>
-    </tr>`;
-  });
-
-  // Atualiza selects
-  const alunoSelect = document.getElementById("alunoEmprestimo");
-  const equipSelect = document.getElementById("equipEmprestimo");
-  const devolucaoSelect = document.getElementById("devolucaoSelect");
-
-  alunoSelect.innerHTML = "<option value=''>Selecione um aluno</option>";
-  equipSelect.innerHTML = "<option value=''>Selecione um equipamento</option>";
-  devolucaoSelect.innerHTML = "<option value=''>Selecione para devolver</option>";
-
-  dados.pessoas.forEach(p => alunoSelect.innerHTML += `<option>${p.nome}</option>`);
-  dados.equipamentos.filter(e => e.status === "No Armário")
-                    .forEach(e => equipSelect.innerHTML += `<option>${e.nome}</option>`);
-  dados.emprestimos.filter(e => e.status === "Emprestado")
-                    .forEach(e => devolucaoSelect.innerHTML += `<option>${e.equipamento} (${e.aluno})</option>`);
+async function removerPessoa(nome) {
+  if (confirm(`Deseja remover ${nome}?`)) {
+    await supabase.from("pessoas").delete().eq("nome", nome);
+    carregarDados();
+  }
 }
 
-function registrarPessoa() {
-  const nome = document.getElementById("nome").value;
-  const telefone = document.getElementById("telefone").value;
-  const cpf = document.getElementById("cpf").value;
-  const curso = document.getElementById("curso").value;
+// =============== FUNÇÕES DE EQUIPAMENTOS ===============
+async function registrarEquipamento() {
+  const nome = nomeEquipamento.value;
+  const patrimonio = patrimonioInput.value;
+  if (!nome || !patrimonio) return alert("Preencha todos os campos!");
 
-  if (!nome || !telefone || !cpf || !curso) {
-    alert("Preencha todos os campos!");
-    return;
-  }
-
-  dados.pessoas.push({ nome, telefone, cpf, curso });
-  salvar();
-  atualizarTabelas();
-  alert(`Pessoa '${nome}' registrada com sucesso!`);
+  await supabase.from("equipamentos").insert([{ nome, patrimonio, status: "No Armário" }]);
+  nomeEquipamento.value = patrimonioInput.value = "";
+  carregarDados();
 }
 
-function registrarEquipamento() {
-  const nome = document.getElementById("nomeEquipamento").value;
-  const patrimonio = document.getElementById("patrimonio").value;
-
-  if (!nome || !patrimonio) {
-    alert("Preencha todos os campos!");
-    return;
+async function removerEquipamento(nome) {
+  if (confirm(`Deseja remover o equipamento ${nome}?`)) {
+    await supabase.from("equipamentos").delete().eq("nome", nome);
+    carregarDados();
   }
-
-  dados.equipamentos.push({ nome, patrimonio, status: "No Armário" });
-  salvar();
-  atualizarTabelas();
-  alert(`Equipamento '${nome}' registrado com sucesso!`);
 }
 
-function registrarEmprestimo() {
-  const aluno = document.getElementById("alunoEmprestimo").value;
-  const equipamento = document.getElementById("equipEmprestimo").value;
+// =============== FUNÇÕES DE EMPRÉSTIMOS ===============
+async function registrarEmprestimo() {
+  const aluno = alunoEmprestimo.value;
+  const equipamento = equipEmprestimo.value;
+  if (!aluno || !equipamento) return alert("Selecione aluno e equipamento!");
 
-  if (!aluno || !equipamento) {
-    alert("Selecione um aluno e um equipamento!");
-    return;
-  }
+  const { data: pessoa } = await supabase.from("pessoas").select("*").eq("nome", aluno).single();
+  const { data: eqp } = await supabase.from("equipamentos").select("*").eq("nome", equipamento).single();
 
-  const pessoa = dados.pessoas.find(p => p.nome === aluno);
-  const eqp = dados.equipamentos.find(e => e.nome === equipamento);
+  if (eqp.status === "Emprestado") return alert("Equipamento já emprestado!");
 
-  if (eqp.status === "Emprestado") {
-    alert("Este equipamento já está emprestado!");
-    return;
-  }
-
-  eqp.status = "Emprestado";
-  const data = new Date().toLocaleString("pt-BR");
-  dados.emprestimos.push({
-    aluno,
-    curso: pessoa.curso,
-    equipamento,
+  await supabase.from("emprestimos").insert([{
+    aluno, curso: pessoa.curso, equipamento,
     status: "Emprestado",
-    data_emprestimo: data,
-    data_devolucao: ""
-  });
+    dataEmprestimo: new Date().toLocaleString("pt-BR"),
+    dataDevolucao: ""
+  }]);
 
-  salvar();
-  atualizarTabelas();
-  alert(`Equipamento '${equipamento}' emprestado a ${aluno}!`);
+  await supabase.from("equipamentos").update({ status: "Emprestado" }).eq("id", eqp.id);
+
+  carregarDados();
 }
 
-function registrarDevolucao() {
-  const selecionado = document.getElementById("devolucaoSelect").value;
-  if (!selecionado) {
-    alert("Selecione um empréstimo!");
-    return;
-  }
+async function registrarDevolucao() {
+  const sel = devolucaoSelect.value;
+  if (!sel) return alert("Selecione um empréstimo!");
+  const { data: emp } = await supabase.from("emprestimos").select("*").eq("equipamento", sel.split(" (")[0]).single();
+  await supabase.from("emprestimos").update({
+    status: "Devolvido",
+    dataDevolucao: new Date().toLocaleString("pt-BR")
+  }).eq("id", emp.id);
 
-  const [equipamento] = selecionado.split(" (");
-  const emp = dados.emprestimos.find(e => e.equipamento === equipamento.trim() && e.status === "Emprestado");
-  const eqp = dados.equipamentos.find(e => e.nome === equipamento.trim());
+  await supabase.from("equipamentos").update({ status: "No Armário" }).eq("nome", emp.equipamento);
 
-  emp.status = "Devolvido";
-  emp.data_devolucao = new Date().toLocaleString("pt-BR");
-  eqp.status = "No Armário";
+  carregarDados();
+}
 
-  salvar();
-  atualizarTabelas();
-  alert(`Equipamento '${equipamento}' devolvido com sucesso!`);
+// =============== CARREGAR DADOS GERAIS ===============
+async function carregarDados() {
+  const { data: pessoas } = await supabase.from("pessoas").select("*");
+  const { data: equipamentos } = await supabase.from("equipamentos").select("*");
+  const { data: emprestimos } = await supabase.from("emprestimos").select("*");
+
+  atualizarTabelas(pessoas, equipamentos, emprestimos);
+}
+
+function atualizarTabelas(pessoas, equipamentos, emprestimos) {
+  const tabelaPessoas = document.getElementById("tabelaPessoas");
+  const tabelaEquip = document.getElementById("tabelaEquipamentos");
+  const tabelaEmp = document.getElementById("tabelaEmprestimos");
+
+  tabelaPessoas.innerHTML = "<tr><th>Nome</th><th>Telefone</th><th>CPF</th><th>Curso</th><th>Ações</th></tr>";
+  pessoas.forEach(p => {
+    tabelaPessoas.innerHTML += `
+      <tr><td>${p.nome}</td><td>${p.telefone}</td><td>${p.cpf}</td><td>${p.curso}</td>
+      <td><button onclick="removerPessoa('${p.nome}')">🗑️</button></td></tr>`;
+  });
+
+  tabelaEquip.innerHTML = "<tr><th>Nome</th><th>Patrimônio</th><th>Status</th><th>Ações</th></tr>";
+  equipamentos.forEach(e => {
+    tabelaEquip.innerHTML += `
+      <tr><td>${e.nome}</td><td>${e.patrimonio}</td><td>${e.status}</td>
+      <td><button onclick="removerEquipamento('${e.nome}')">🗑️</button></td></tr>`;
+  });
+
+  tabelaEmp.innerHTML = "<tr><th>Equipamento</th><th>Aluno</th><th>Curso</th><th>Status</th><th>Data Empréstimo</th><th>Data Devolução</th></tr>";
+  emprestimos.forEach(emp => {
+    tabelaEmp.innerHTML += `
+      <tr><td>${emp.equipamento}</td><td>${emp.aluno}</td><td>${emp.curso}</td><td>${emp.status}</td>
+      <td>${emp.dataEmprestimo}</td><td>${emp.dataDevolucao || "---"}</td></tr>`;
+  });
 }
 
 function mostrarAba(nome) {
-  document.querySelectorAll(".tab, .tab-content").forEach(el => el.classList.remove("active"));
-  document.querySelector(`.tab[onclick*="${nome}"]`).classList.add("active");
+  document.querySelectorAll(".tab, .tab-content").forEach(e => e.classList.remove("active"));
+  document.querySelector(`.tab[onclick*='${nome}']`).classList.add("active");
   document.getElementById(nome).classList.add("active");
 }
 
-atualizarTabelas();
+carregarDados();
