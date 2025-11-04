@@ -1,147 +1,72 @@
-/* ---------- ESTILO GERAL ---------- */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f5f9ff;
   margin: 0;
-  padding: 0;
+  background: #f4f4f9;
 }
 
 header {
-  background: #004d99;
+  background: #2c3e50;
   color: white;
   text-align: center;
   padding: 15px;
-  font-size: 1.2rem;
 }
 
-/* ---------- TABS ---------- */
 .tabs {
   display: flex;
-  background-color: #0066cc;
-  justify-content: space-around;
   flex-wrap: wrap;
+  justify-content: space-around;
+  background: #ecf0f1;
 }
 
 .tab {
+  padding: 10px;
+  cursor: pointer;
   flex: 1;
   text-align: center;
-  padding: 10px;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
 }
 
 .tab.active {
-  background-color: #004d99;
+  background: #3498db;
+  color: white;
 }
 
-/* ---------- CONTEÚDO ---------- */
 .tab-content {
   display: none;
-  padding: 20px;
+  padding: 15px;
 }
 
 .tab-content.active {
   display: block;
 }
 
-/* ---------- FORMULÁRIOS ---------- */
-input, select {
-  display: block;
-  width: 100%;
-  max-width: 500px;
-  margin: 8px auto;
+input, select, button {
+  margin: 5px;
   padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
+  width: calc(100% - 20px);
+  max-width: 400px;
 }
 
 button {
-  background-color: #0066cc;
+  background: #3498db;
   color: white;
   border: none;
   border-radius: 5px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-size: 1rem;
-  display: block;
-  margin: 10px auto;
 }
 
-button:hover {
-  background-color: #004d99;
-}
-
-/* ---------- TABELAS ---------- */
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
-  background: white;
-  border-radius: 5px;
-  overflow: hidden;
 }
 
 th, td {
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   padding: 8px;
-  text-align: left;
-  font-size: 0.95rem;
 }
 
-th {
-  background-color: #cce0ff;
-}
-
-/* ---------- RESPONSIVIDADE MOBILE ---------- */
-@media (max-width: 768px) {
-  header {
-    font-size: 1rem;
-    padding: 12px;
-  }
-
-  .tabs {
-    flex-direction: column;
-  }
-
-  .tab {
-    padding: 12px;
-    font-size: 1rem;
-  }
-
-  input, select, button {
-    width: 90%;
-    font-size: 0.95rem;
-  }
-
-  table {
-    font-size: 0.85rem;
-  }
-
+@media (max-width: 600px) {
   th, td {
-    padding: 6px;
-  }
-
-  /* Torna tabelas roláveis lateralmente em telas pequenas */
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 480px) {
-  header {
-    font-size: 0.9rem;
-  }
-
-  button {
-    font-size: 0.9rem;
-    padding: 8px;
-  }
-
-  input, select {
-    padding: 8px;
+    font-size: 12px;
+    padding: 5px;
   }
 }
