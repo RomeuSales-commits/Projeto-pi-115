@@ -1,125 +1,237 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+// Importa o cliente Supabase
+import { supabase } from './supabaseClient.js'
 
-const SUPABASE_URL = "https://xxgmufacvbzbxbcxmfcm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4Z211ZmFjdmJ6YnhiY3htZmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyMDkzMjIsImV4cCI6MjA3Nzc4NTMyMn0.5TtAULeW2b8_eExfWfFfz4YPkzn7J0ki1XlswTj5nNY";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// ============================
+// Funções de abas (navegação)
+// ============================
+function mostrarAba(abaId) {
+  document.querySelectorAll(".tab-content").forEach(div => div.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+  document.getElementById(abaId).classList.add("active");
+  document.querySelector(`.tab[onclick="mostrarAba('${abaId}')"]`).classList.add("active");
+}
 
-// =============== FUNÇÕES DE PESSOAS ===============
+// ============================
+// PESSOAS
+// ============================
 async function registrarPessoa() {
-  const nome = nomeInput.value;
-  const telefone = telefoneInput.value;
-  const cpf = cpfInput.value;
-  const curso = cursoInput.value;
+  const nome = document.getElementById("nome").value.trim();
+  const telefone = document.getElementById("telefone").value.trim();
+  const cpf = document.getElementById("cpf").value.trim();
+  const curso = document.getElementById("curso").value.trim();
 
-  if (!nome || !telefone || !cpf || !curso) return alert("Preencha todos os campos!");
+  if (!nome || !telefone || !cpf || !curso) {
+    alert("Preencha todos os campos!");
+    return;
+  }
 
-  await supabase.from("pessoas").insert([{ nome, telefone, cpf, curso }]);
-  nomeInput.value = telefoneInput.value = cpfInput.value = cursoInput.value = "";
-  carregarDados();
-}
-
-async function removerPessoa(nome) {
-  if (confirm(`Deseja remover ${nome}?`)) {
-    await supabase.from("pessoas").delete().eq("nome", nome);
-    carregarDados();
+  const { error } = await supabase.from("pessoas").insert([{ nome, telefone, cpf, curso }]);
+  if (error) {
+    alert("Erro ao registrar pessoa: " + error.message);
+  } else {
+    alert("Pessoa registrada com sucesso!");
+    carregarPessoas();
   }
 }
 
-// =============== FUNÇÕES DE EQUIPAMENTOS ===============
+async function carregarPessoas() {
+  const { data, error } = await supabase.from("pessoas").select("*");
+  const tabela = document.getElementById("tabelaPessoas");
+  tabela.innerHTML = "<tr><th>Nome</th><th>Telefone</th><th>CPF</th><th>Curso</th><th>Ações</th></tr>";
+
+  data?.forEach(p => {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${p.nome}</td>
+      <td>${p.telefone}</td>
+      <td>${p.cpf}</td>
+      <td>${p.curso}</td>
+      <td><button onclick="removerPessoa('${p.cpf}')">Remover</button></td>
+    `;
+    tabela.appendChild(linha);
+  });
+
+  atualizarSelects();
+}
+
+async function removerPessoa(cpf) {
+  const confirmar = confirm("Deseja realmente remover esta pessoa?");
+  if (!confirmar) return;
+
+  const { error } = await supabase.from("pessoas").delete().eq("cpf", cpf);
+  if (error) alert("Erro ao remover: " + error.message);
+  else carregarPessoas();
+}
+
+// ============================
+// EQUIPAMENTOS
+// ============================
 async function registrarEquipamento() {
-  const nome = nomeEquipamento.value;
-  const patrimonio = patrimonioInput.value;
-  if (!nome || !patrimonio) return alert("Preencha todos os campos!");
+  const nome = document.getElementById("nomeEquipamento").value.trim();
+  const patrimonio = document.getElementById("patrimonio").value.trim();
 
-  await supabase.from("equipamentos").insert([{ nome, patrimonio, status: "No Armário" }]);
-  nomeEquipamento.value = patrimonioInput.value = "";
-  carregarDados();
-}
+  if (!nome || !patrimonio) {
+    alert("Preencha todos os campos!");
+    return;
+  }
 
-async function removerEquipamento(nome) {
-  if (confirm(`Deseja remover o equipamento ${nome}?`)) {
-    await supabase.from("equipamentos").delete().eq("nome", nome);
-    carregarDados();
+  const { error } = await supabase.from("equipamentos").insert([{ nome, patrimonio, status: "No Armário" }]);
+  if (error) alert("Erro ao registrar equipamento: " + error.message);
+  else {
+    alert("Equipamento registrado com sucesso!");
+    carregarEquipamentos();
   }
 }
 
-// =============== FUNÇÕES DE EMPRÉSTIMOS ===============
+async function carregarEquipamentos() {
+  const { data, error } = await supabase.from("equipamentos").select("*");
+  const tabela = document.getElementById("tabelaEquipamentos");
+  tabela.innerHTML = "<tr><th>Nome</th><th>Patrimônio</th><th>Status</th><th>Ações</th></tr>";
+
+  data?.forEach(eq => {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${eq.nome}</td>
+      <td>${eq.patrimonio}</td>
+      <td>${eq.status}</td>
+      <td><button onclick="removerEquipamento('${eq.patrimonio}')">Remover</button></td>
+    `;
+    tabela.appendChild(linha);
+  });
+
+  atualizarSelects();
+}
+
+async function removerEquipamento(patrimonio) {
+  const confirmar = confirm("Deseja realmente remover este equipamento?");
+  if (!confirmar) return;
+
+  const { error } = await supabase.from("equipamentos").delete().eq("patrimonio", patrimonio);
+  if (error) alert("Erro ao remover: " + error.message);
+  else carregarEquipamentos();
+}
+
+// ============================
+// EMPRÉSTIMOS
+// ============================
 async function registrarEmprestimo() {
-  const aluno = alunoEmprestimo.value;
-  const equipamento = equipEmprestimo.value;
-  if (!aluno || !equipamento) return alert("Selecione aluno e equipamento!");
+  const aluno = document.getElementById("alunoEmprestimo").value;
+  const equip = document.getElementById("equipEmprestimo").value;
 
-  const { data: pessoa } = await supabase.from("pessoas").select("*").eq("nome", aluno).single();
-  const { data: eqp } = await supabase.from("equipamentos").select("*").eq("nome", equipamento).single();
+  if (!aluno || !equip) {
+    alert("Selecione um aluno e um equipamento!");
+    return;
+  }
 
-  if (eqp.status === "Emprestado") return alert("Equipamento já emprestado!");
+  const curso = aluno.split(" - ")[1];
+  const data_emprestimo = new Date().toLocaleString("pt-BR");
+  const status = "Emprestado";
 
-  await supabase.from("emprestimos").insert([{
-    aluno, curso: pessoa.curso, equipamento,
-    status: "Emprestado",
-    dataEmprestimo: new Date().toLocaleString("pt-BR"),
-    dataDevolucao: ""
-  }]);
+  await supabase.from("emprestimos").insert([{ aluno, curso, equipamento: equip, data_emprestimo, status }]);
+  await supabase.from("equipamentos").update({ status }).eq("nome", equip);
 
-  await supabase.from("equipamentos").update({ status: "Emprestado" }).eq("id", eqp.id);
-
-  carregarDados();
+  alert("Empréstimo registrado com sucesso!");
+  carregarEmprestimos();
+  carregarEquipamentos();
 }
 
 async function registrarDevolucao() {
-  const sel = devolucaoSelect.value;
-  if (!sel) return alert("Selecione um empréstimo!");
-  const { data: emp } = await supabase.from("emprestimos").select("*").eq("equipamento", sel.split(" (")[0]).single();
-  await supabase.from("emprestimos").update({
-    status: "Devolvido",
-    dataDevolucao: new Date().toLocaleString("pt-BR")
-  }).eq("id", emp.id);
+  const devolucaoSelect = document.getElementById("devolucaoSelect");
+  const emprestimoId = devolucaoSelect.value;
 
-  await supabase.from("equipamentos").update({ status: "No Armário" }).eq("nome", emp.equipamento);
+  if (!emprestimoId) {
+    alert("Selecione um empréstimo para devolver!");
+    return;
+  }
 
-  carregarDados();
+  const data_devolucao = new Date().toLocaleString("pt-BR");
+
+  await supabase.from("emprestimos").update({ status: "Devolvido", data_devolucao }).eq("id", emprestimoId);
+
+  // Atualizar status do equipamento
+  const { data } = await supabase.from("emprestimos").select("equipamento").eq("id", emprestimoId).single();
+  if (data?.equipamento) {
+    await supabase.from("equipamentos").update({ status: "No Armário" }).eq("nome", data.equipamento);
+  }
+
+  alert("Equipamento devolvido com sucesso!");
+  carregarEmprestimos();
+  carregarEquipamentos();
 }
 
-// =============== CARREGAR DADOS GERAIS ===============
-async function carregarDados() {
+async function carregarEmprestimos() {
+  const { data, error } = await supabase.from("emprestimos").select("*");
+  const tabela = document.getElementById("tabelaEmprestimos");
+  tabela.innerHTML = "<tr><th>Equipamento</th><th>Aluno</th><th>Curso</th><th>Status</th><th>Data Empréstimo</th><th>Data Devolução</th></tr>";
+
+  const devolucaoSelect = document.getElementById("devolucaoSelect");
+  devolucaoSelect.innerHTML = "";
+
+  data?.forEach(e => {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${e.equipamento}</td>
+      <td>${e.aluno}</td>
+      <td>${e.curso}</td>
+      <td>${e.status}</td>
+      <td>${e.data_emprestimo}</td>
+      <td>${e.data_devolucao || "-"}</td>
+    `;
+    tabela.appendChild(linha);
+
+    if (e.status === "Emprestado") {
+      const opt = document.createElement("option");
+      opt.value = e.id;
+      opt.textContent = `${e.equipamento} - ${e.aluno}`;
+      devolucaoSelect.appendChild(opt);
+    }
+  });
+}
+
+// ============================
+// ATUALIZAR SELETORES
+// ============================
+async function atualizarSelects() {
   const { data: pessoas } = await supabase.from("pessoas").select("*");
   const { data: equipamentos } = await supabase.from("equipamentos").select("*");
-  const { data: emprestimos } = await supabase.from("emprestimos").select("*");
 
-  atualizarTabelas(pessoas, equipamentos, emprestimos);
-}
+  const alunoSelect = document.getElementById("alunoEmprestimo");
+  const equipSelect = document.getElementById("equipEmprestimo");
 
-function atualizarTabelas(pessoas, equipamentos, emprestimos) {
-  const tabelaPessoas = document.getElementById("tabelaPessoas");
-  const tabelaEquip = document.getElementById("tabelaEquipamentos");
-  const tabelaEmp = document.getElementById("tabelaEmprestimos");
+  alunoSelect.innerHTML = "";
+  equipSelect.innerHTML = "";
 
-  tabelaPessoas.innerHTML = "<tr><th>Nome</th><th>Telefone</th><th>CPF</th><th>Curso</th><th>Ações</th></tr>";
-  pessoas.forEach(p => {
-    tabelaPessoas.innerHTML += `
-      <tr><td>${p.nome}</td><td>${p.telefone}</td><td>${p.cpf}</td><td>${p.curso}</td>
-      <td><button onclick="removerPessoa('${p.nome}')">🗑️</button></td></tr>`;
+  pessoas?.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = `${p.nome} - ${p.curso}`;
+    opt.textContent = p.nome;
+    alunoSelect.appendChild(opt);
   });
 
-  tabelaEquip.innerHTML = "<tr><th>Nome</th><th>Patrimônio</th><th>Status</th><th>Ações</th></tr>";
-  equipamentos.forEach(e => {
-    tabelaEquip.innerHTML += `
-      <tr><td>${e.nome}</td><td>${e.patrimonio}</td><td>${e.status}</td>
-      <td><button onclick="removerEquipamento('${e.nome}')">🗑️</button></td></tr>`;
-  });
-
-  tabelaEmp.innerHTML = "<tr><th>Equipamento</th><th>Aluno</th><th>Curso</th><th>Status</th><th>Data Empréstimo</th><th>Data Devolução</th></tr>";
-  emprestimos.forEach(emp => {
-    tabelaEmp.innerHTML += `
-      <tr><td>${emp.equipamento}</td><td>${emp.aluno}</td><td>${emp.curso}</td><td>${emp.status}</td>
-      <td>${emp.dataEmprestimo}</td><td>${emp.dataDevolucao || "---"}</td></tr>`;
+  equipamentos?.forEach(eq => {
+    if (eq.status === "No Armário") {
+      const opt = document.createElement("option");
+      opt.value = eq.nome;
+      opt.textContent = eq.nome;
+      equipSelect.appendChild(opt);
+    }
   });
 }
 
-function mostrarAba(nome) {
-  document.querySelectorAll(".tab, .tab-content").forEach(e => e.classList.remove("active"));
-  document.querySelector(`.tab[onclick*='${nome}']`).classList.add("active");
-  document.getElementById(nome).classList.add("active");
-}
+// ============================
+// INICIALIZAÇÃO
+// ============================
+window.onload = function() {
+  carregarPessoas();
+  carregarEquipamentos();
+  carregarEmprestimos();
+};
 
-carregarDados();
+// Tornar funções acessíveis no HTML
+window.mostrarAba = mostrarAba;
+window.registrarPessoa = registrarPessoa;
+window.removerPessoa = removerPessoa;
+window.registrarEquipamento = registrarEquipamento;
+window.removerEquipamento = removerEquipamento;
+window.registrarEmprestimo = registrarEmprestimo;
+window.registrarDevolucao = registrarDevolucao;
